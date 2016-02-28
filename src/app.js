@@ -17,6 +17,8 @@ var HelloWorldLayer = cc.Layer.extend({
     allO:[],
     Col:[],
     Row:[],
+    posx:0,
+    posy:0,
     
     random: function getRandomInt(min, max) {
     	return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -82,44 +84,130 @@ var HelloWorldLayer = cc.Layer.extend({
         }
 		return true;
 	},
-    
-    compuPlay : function(ty){
-        while(true){
-            if(this.tableOcuppied()){
-                this.gameStarted = false;
-            }
-            var posX = this.random(0, 2);
-            var posY = this.random(0, 2);    
-            var x1 = this.Col[posY*2];
-            var x2 = this.Col[posY*2 + 1];
-            var y1 = this.Row[posX*2];
-            var y2 = this.Row[posX*2 + 1];
-            var idx = posX*3+posY;
-            if(ty == 0){
-                this.allX[idx].x = (x1+x2)/2;
-                this.allX[idx].y = (y1+y2)/2;
-            }else{
-                this.allO[idx].x = (x1+x2)/2;
-                this.allO[idx].y = (y1+y2)/2;
-            }
-            if(!this.allX[idx].isVisible() && !this.allO[idx].isVisible()){
-                if(ty == 0){
-                    this.allX[idx].setVisible(true);
-                }else{
-                    this.allO[idx].setVisible(true);
+
+    p2 : function(ty){
+        if(this.checkWinner(0) == 'O'){
+            return true;
+        }
+        if(this.checkWinner(0) == 'X'){
+            return false;
+        }
+        if(this.tableOcuppied(0)){
+            return true;
+        }
+        for(var i=0; i<3; i++){
+            for(var j=0; j<3; j++){
+                if(!this.allX[i*3+j].isVisible() && !this.allO[i*3+j].isVisible()){
+                    this.allO[i*3+j].setVisible(true);
+                    if(!this.p1(0)){
+                        if(ty){
+                            posx = i;
+                            posy = j;
+                        }
+                        this.allO[i*3+j].setVisible(false);
+                        return true;
+                    }
+                    this.allO[i*3+j].setVisible(false);
                 }
-                break;
             }
         }
+        return false;
+    },
+
+    p1 : function(ty){
+        if(this.checkWinner(0) == 'X'){
+            return true;
+        }
+        if(this.checkWinner(0) == 'O'){
+            return false;
+        }
+        if(this.tableOcuppied(0)){
+            return true;
+        }
+        for(var i=0; i<3; i++){
+            for(var j=0; j<3; j++){
+                if(!this.allX[i*3+j].isVisible() && !this.allO[i*3+j].isVisible()){
+                    this.allX[i*3+j].setVisible(true);
+                    if(!this.p2(0)){
+                        if(ty){
+                            posx = i;
+                            posy = j;
+                        }
+                        this.allX[i*3+j].setVisible(false);
+                        return true;
+                    }
+                    this.allX[i*3+j].setVisible(false);
+                }
+            }
+        }
+        return false;
     },
     
-    tableOcuppied : function(){
+    compuPlay : function(ty){
+//        GAME THEORY
+        if(ty == 0){
+            if(this.p1(1)){
+            }else{
+                posx = this.random(0, 2);
+                posy = this.random(0, 2);
+            }
+        }else{
+            if(this.p2(1)){
+            }else{
+                posx = this.random(0, 2);
+                posy = this.random(0, 2);
+            }
+        }
+        var x1 = this.Col[posy*2];
+        var x2 = this.Col[posy*2 + 1];
+        var y1 = this.Row[posx*2];
+        var y2 = this.Row[posx*2 + 1];
+        var idx = posx*3+posy;
+        if(ty == 0){
+            this.allX[idx].x = (x1+x2)/2;
+            this.allX[idx].y = (y1+y2)/2;
+            this.allX[idx].setVisible(true);
+        }else{
+            this.allO[idx].x = (x1+x2)/2;
+            this.allO[idx].y = (y1+y2)/2;
+            this.allO[idx].setVisible(true);
+        }
+    
+//        RANDOM WAY
+//        while(true){
+//            if(this.tableOcuppied()){
+//                this.gameStarted = false;
+//            }
+//            var posX = this.random(0, 2);
+//            var posY = this.random(0, 2);    
+//            var idx = posX*3+posY;
+//            if(ty == 0){
+//                this.allX[idx].x = (x1+x2)/2;
+//                this.allX[idx].y = (y1+y2)/2;
+//            }else{
+//                this.allO[idx].x = (x1+x2)/2;
+//                this.allO[idx].y = (y1+y2)/2;
+//            }
+//            if(!this.allX[idx].isVisible() && !this.allO[idx].isVisible()){
+//                if(ty == 0){
+//                    this.allX[idx].setVisible(true);
+//                }else{
+//                    this.allO[idx].setVisible(true);
+//                }
+//                break;
+//            }
+//        }
+    },
+    
+    tableOcuppied : function(message){
         for(var i=0; i<9; i++){
             if(!this.allX[i].isVisible() && !this.allO[i].isVisible()){
                 return false;
             }
         }
-        alert("Es un empate!!");
+        if(message){
+            alert("Es un empate!!");
+        }
         return true;
     },
     
@@ -134,7 +222,7 @@ var HelloWorldLayer = cc.Layer.extend({
         return aux;
     },
     
-    checkWinner : function(){
+    checkWinner : function(message){
         //Horizontal
         for(var i=0; i<3; i++){
             var winner = true;
@@ -145,8 +233,10 @@ var HelloWorldLayer = cc.Layer.extend({
             }
             if(winner){
                 if(this.identify(i, 0) != '_'){
-                    alert("Felicidades!! Ha ganado "+this.identify(i, 0));
-                    return true;
+                    if(message){
+                        alert("Felicidades!! Ha ganado "+this.identify(i, 0));
+                    }
+                    return this.identify(i, 0);
                 }
             }
         }
@@ -160,8 +250,10 @@ var HelloWorldLayer = cc.Layer.extend({
             }
             if(winner){
                 if(this.identify(0, j) != '_'){
-                    alert("Felicidades!! Ha ganado "+this.identify(0, j));
-                    return true;
+                    if(message){
+                        alert("Felicidades!! Ha ganado "+this.identify(0, j));
+                    }
+                    return this.identify(0, j);
                 }
             }
         }
@@ -175,8 +267,10 @@ var HelloWorldLayer = cc.Layer.extend({
         }
         if(winner){
             if(this.identify(0, 0) != '_'){
-                alert("Felicidades!! Ha ganado "+this.identify(0, 0));
-                return true;
+                if(message){
+                        alert("Felicidades!! Ha ganado "+this.identify(0, 0));
+                }
+                return this.identify(0, 0);
             }
         }
         
@@ -188,11 +282,13 @@ var HelloWorldLayer = cc.Layer.extend({
         }
         if(winner){
             if(this.identify(0, 2) != '_'){
-                alert("Felicidades!! Ha ganado "+this.identify(0, 2));
-                return true;
+                if(message){
+                        alert("Felicidades!! Ha ganado "+this.identify(0, 2));
+                }
+                return this.identify(0, 2);
             }
         }
-        return false;
+        return '_';
     },
     
     checkAndAdd : function(touch, ty, row, col, idx){
@@ -219,11 +315,11 @@ var HelloWorldLayer = cc.Layer.extend({
         var touch = location.getLocation();
         var juego = event.getCurrentTarget();
         if(juego.gameStarted){
-            if(juego.checkWinner()){
+            if(juego.checkWinner(1)!='_'){
                 this.gameStarted = false;
                 return true;
             }
-            if(juego.tableOcuppied()){
+            if(juego.tableOcuppied(1)){
                 return true;
             }
             var ty = 0;
@@ -241,13 +337,13 @@ var HelloWorldLayer = cc.Layer.extend({
                 }
             }
             if(valid){
-                if(juego.checkWinner()){
+                if(juego.checkWinner(1)!='_'){
                     this.gameStarted = false;
                     return true;
                 }
-                if(!juego.tableOcuppied() && juego.Oneplayerchosen.isVisible()){
+                if(!juego.tableOcuppied(1) && juego.Oneplayerchosen.isVisible()){
                     juego.compuPlay(!ty);
-                    if(juego.checkWinner()){
+                    if(juego.checkWinner(1)!='_'){
                         this.gameStarted = false;
                     }
                 }
